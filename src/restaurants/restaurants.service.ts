@@ -10,34 +10,42 @@ import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
 export class RestaurantsService {
   constructor(
     @InjectRepository(Restaurant)
-    private readonly restaurantRepo: Repository<Restaurant>,
+    private readonly restaurantRepository: Repository<Restaurant>,
   ) {}
 
   create(dto: CreateRestaurantDto, ownerId: number) {
-  const restaurant = this.restaurantRepo.create({
+  const restaurant = this.restaurantRepository.create({
     ...dto,
     owner: { id: ownerId },
   });
 
-  return this.restaurantRepo.save(restaurant);
+  return this.restaurantRepository.save(restaurant);
   }
 
 
-  findAll(search?: string) {
-    if (search) {
-      return this.restaurantRepo.find({
-        where: [
-          { name: Like(`%${search}%`) },
-          { category: Like(`%${search}%`) },
-        ],
-      });
-    }
+  async findAll(filters: { search?: string; category?: string }) {
+  const query = this.restaurantRepository.createQueryBuilder('r');
 
-    return this.restaurantRepo.find();
+  query.where('r.isActive = true');
+
+  if (filters.search) {
+    query.andWhere('LOWER(r.name) LIKE LOWER(:search)', {
+      search: `%${filters.search}%`,
+    });
   }
+
+  if (filters.category) {
+    query.andWhere('LOWER(r.category) = LOWER(:category)', {
+      category: filters.category,
+    });
+  }
+
+  return query.getMany();
+}
+
 
   async findOne(id: number) {
-    const restaurant = await this.restaurantRepo.findOne({
+    const restaurant = await this.restaurantRepository.findOne({
       where: { id },
       relations: ['products'],
     });
@@ -50,7 +58,7 @@ export class RestaurantsService {
   }
 
   async update(id: number, dto: UpdateRestaurantDto, userId: number) {
-    const restaurant = await this.restaurantRepo.findOne({
+    const restaurant = await this.restaurantRepository.findOne({
       where: { id },
       relations: ['owner']
     });
@@ -64,11 +72,11 @@ export class RestaurantsService {
     }
 
     Object.assign(restaurant, dto);
-    return this.restaurantRepo.save(restaurant);
+    return this.restaurantRepository.save(restaurant);
   }
 
   async remove(id: number, userId: number) {
-    const restaurant = await this.restaurantRepo.findOne({
+    const restaurant = await this.restaurantRepository.findOne({
       where: { id },
       relations: ['owner'],
     });
@@ -81,7 +89,7 @@ export class RestaurantsService {
     throw new ForbiddenException();
     }
 
-    await this.restaurantRepo.remove(restaurant);
+    await this.restaurantRepository.remove(restaurant);
     return { message: 'Restaurant deleted' };
   }
 }

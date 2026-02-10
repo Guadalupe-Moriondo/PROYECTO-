@@ -1,8 +1,10 @@
-import {Entity,PrimaryGeneratedColumn,Column,OneToMany,} from 'typeorm';
+import {Entity,PrimaryGeneratedColumn,Column,OneToMany,ManyToMany} from 'typeorm';
 import { UserRole } from '../user-role.enum';
 import { Review } from '../../reviews/entities/review.entity';
 import { Order } from '../../orders/entities/order.entity';
 import { Address } from '../../addresses/entities/address.entity';
+import { Restaurant } from '../../restaurants/entities/restaurant.entity';
+import { JoinTable } from 'typeorm';
 
 @Entity()
 export class User {
@@ -26,6 +28,10 @@ export class User {
   })
   role: UserRole;
 
+  @Column({ default: false })
+  isAvailable: boolean;
+
+
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
 
@@ -37,4 +43,12 @@ export class User {
 
   @OneToMany(() => Review, review => review.user)
   reviews: Review[];
+
+  @ManyToMany(() => Restaurant)
+  @JoinTable({
+    name: 'user_favorite_restaurants',
+  })
+  favoriteRestaurants: Restaurant[];
+
+
 }

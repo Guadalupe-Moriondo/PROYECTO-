@@ -42,15 +42,32 @@ export class ReviewsService {
     );
   }
 
+  const existing = await this.reviewRepository.findOne({
+  where: {
+    user: { id: userId },
+    order: { id: dto.orderId },
+  },
+});
+
+if (existing) {
+  throw new ForbiddenException('Order already reviewed');
+}
+
+
   const review = this.reviewRepository.create({
     rating: dto.rating,
     comment: dto.comment,
     user: { id: userId },
     restaurant: { id: dto.restaurantId },
     product: dto.productId ? { id: dto.productId } : undefined,
+    order: { id: dto.orderId },
   });
 
+  
+
     const saved = await this.reviewRepository.save(review);
+
+
 
     // ⭐ recalcular restaurant
    await this.recalcRestaurantRating(dto.restaurantId);

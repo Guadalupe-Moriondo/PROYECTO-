@@ -4,9 +4,11 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  
 } from 'typeorm';
 import { Order } from './order.entity';
 import { Product } from '../../products/entities/product.entity';
+
 
 @Entity()
 export class OrderItem {
@@ -26,4 +28,5 @@ export class OrderItem {
 
   @Column('decimal')
   price: number;
+
 }

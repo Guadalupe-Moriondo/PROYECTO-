@@ -11,6 +11,7 @@ import { Product } from '../../products/entities/product.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { User } from '../../users/entities/user.entity';
 
+
 @Entity()
 export class Restaurant {
   @PrimaryGeneratedColumn()
@@ -47,5 +48,6 @@ export class Restaurant {
   @JoinColumn({ name: 'owner_id' })
   owner: User;
 
+  
   
 }

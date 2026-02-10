@@ -8,12 +8,20 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UnauthorizedException } from '@nestjs/common';
 import { UserRole } from './user-role.enum';
+import { BadRequestException } from '@nestjs/common';
+import { Restaurant } from '../restaurants/entities/restaurant.entity';
+import { ForbiddenException } from '@nestjs/common';
+
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly jwtService: JwtService,
+
+    @InjectRepository(Restaurant)
+    private readonly restaurantRepository: Repository<Restaurant>,
+  
   ) {}
 
   async create(dto: CreateUserDto) {
@@ -90,10 +98,11 @@ async login(email: string, password: string) {
     where: { email },
   });
 
-  if (!user) {
+  if (!user || !user.password) {
     throw new UnauthorizedException('Invalid credentials');
   }
-
+  console.log('DB password hash:', user.password);
+  console.log('Password from body:', password);
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) {
     throw new UnauthorizedException('Invalid credentials');
@@ -108,6 +117,85 @@ async login(email: string, password: string) {
     access_token: this.jwtService.sign(payload),
   };
 }
+
+
+async addFavoriteRestaurant(userId: number, restaurantId: number) {
+  const user = await this.userRepo.findOne({
+    where: { id: userId },
+    relations: ['favoriteRestaurants'],
+  });
+
+  if (!user) throw new NotFoundException('User not found');
+
+  const restaurant = await this.restaurantRepository.findOne({
+    where: { id: restaurantId },
+  });
+
+  if (!restaurant)
+    throw new NotFoundException('Restaurant not found');
+
+  const alreadyFavorite = user.favoriteRestaurants.some(
+    r => r.id === restaurantId,
+  );
+
+  if (alreadyFavorite) {
+    throw new BadRequestException('Already in favorites');
+  }
+
+  user.favoriteRestaurants.push(restaurant);
+  await this.userRepo.save(user);
+
+  return { message: 'Added to favorites' };
+}
+
+async removeFavoriteRestaurant(userId: number, restaurantId: number) {
+  const user = await this.userRepo.findOne({
+    where: { id: userId },
+    relations: ['favoriteRestaurants'],
+  });
+
+  if (!user) throw new NotFoundException('User not found');
+
+  user.favoriteRestaurants = user.favoriteRestaurants.filter(
+    r => r.id !== restaurantId,
+  );
+
+  await this.userRepo.save(user);
+
+  return { message: 'Removed from favorites' };
+}
+
+async getFavoriteRestaurants(userId: number) {
+  const user = await this.userRepo.findOne({
+    where: { id: userId },
+    relations: ['favoriteRestaurants'],
+  });
+
+  if (!user) throw new NotFoundException('User not found');
+
+  return user.favoriteRestaurants;
+}
+
+async setDriverAvailability(
+  userId: number,
+  isAvailable: boolean,
+) {
+  const user = await this.userRepo.findOne({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  if (user.role !== UserRole.DRIVER) {
+    throw new ForbiddenException('Only drivers allowed');
+  }
+
+  user.isAvailable = isAvailable;
+  return this.userRepo.save(user);
+}
+
 
 
 }

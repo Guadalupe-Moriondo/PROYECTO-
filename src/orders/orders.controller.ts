@@ -9,7 +9,7 @@ import { CurrentUser } from '../users/current-user.decorator';
 import { AddOrderItemDto } from './dto/add-order-item.dto';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
-
+import { Req } from '@nestjs/common';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('orders')
@@ -34,6 +34,27 @@ export class OrdersController {
     return this.ordersService.findOne(+id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DRIVER)
+  @Get('available')
+  findAvailable() {
+    return this.ordersService.findAvailableForDrivers();
+  }
+
+  @Get(':id/status-history')
+  getStatusHistory(@Param('id') id: string) {
+    return this.ordersService.getStatusHistory(+id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('driver/earnings')
+  getMyEarnings(@Req() req) {
+    return this.ordersService.getDriverEarnings(req.user.userId);
+  }
+
+
+
+
   @Roles(UserRole.DRIVER)
   @Patch(':id/status')
   updateStatus(
@@ -57,6 +78,17 @@ addItem(
 ) {
   return this.ordersService.addItem(+orderId, dto, user.userId);
 }
+
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.DRIVER)
+@Post(':id/accept')
+acceptOrder(
+  @Param('id') id: string,
+  @CurrentUser() user: any,
+) {
+  return this.ordersService.assignDriver(+id, user.userId);
+}
+
 
   @Delete(':id/items/:itemId')
 removeItem(

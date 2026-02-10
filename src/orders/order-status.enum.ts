@@ -1,5 +1,6 @@
 export enum OrderStatus {
-  PENDING = 'PENDING',
+  CART= 'CART',
+  CONFIRMED = 'CONFIRMED',
   ACCEPTED = 'ACCEPTED',
   PREPARING = 'PREPARING',
   READY = 'READY',

@@ -5,6 +5,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { Index } from 'typeorm';
 
 @Entity()
 export class Address {
@@ -28,6 +29,8 @@ export class Address {
 
   @Column({ default: false })
   isDefault: boolean;
+
+  @Index(['user', 'isDefault'])
 
   @ManyToOne(() => User, (user) => user.addresses, {
     onDelete: 'CASCADE',

@@ -16,4 +16,6 @@ export class CreateReviewDto {
 
   @IsString()
   comment: string;
+
+  orderId: number;
 }

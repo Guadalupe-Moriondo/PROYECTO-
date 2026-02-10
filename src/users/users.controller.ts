@@ -18,7 +18,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { UserRole } from './user-role.enum';
 import { CurrentUser } from './current-user.decorator';
-
+import { Req } from '@nestjs/common';
 
 
 @Controller('users')
@@ -35,6 +35,19 @@ export class UsersController {
   return this.usersService.login(dto.email, dto.password);
 }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('favorites/restaurants/:id')
+  addFavorite(
+    @Req() req,
+    @Param('id') restaurantId: string,
+  ) {
+    return this.usersService.addFavoriteRestaurant(
+     req.user.userId,
+     +restaurantId,
+    );
+}
+
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get()
@@ -46,6 +59,14 @@ export class UsersController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(+id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('favorites/restaurants')
+  getFavorites(@Req() req) {
+    return this.usersService.getFavoriteRestaurants(
+     req.user.userId,
+    );
   }
 
 
@@ -67,6 +88,18 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Delete('favorites/restaurants/:id')
+  removeFavorite(
+    @Req() req,
+    @Param('id') restaurantId: string,
+  ) {
+    return this.usersService.removeFavoriteRestaurant(
+      req.user.userId,
+      +restaurantId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
 @Get('me')
 getMe(@CurrentUser() user: any) {
   return this.usersService.findMe(user.userId);
@@ -80,6 +113,20 @@ updateMe(
 ) {
   return this.usersService.updateMe(user.userId, dto);
 }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('drivers/me/availability')
+  setAvailability(
+    @CurrentUser() user: any,
+    @Body('isAvailable') isAvailable: boolean,
+  ) {
+    return this.usersService.setDriverAvailability(
+     user.userId,
+     isAvailable,
+    );
+  }
+
+
 
 }
 

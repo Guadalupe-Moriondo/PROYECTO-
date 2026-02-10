@@ -10,6 +10,7 @@ import { OrdersModule } from './orders/orders.module';
 import { AddressesModule } from './addresses/addresses.module';
 
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,7 +27,7 @@ import { AddressesModule } from './addresses/addresses.module';
         password: config.getOrThrow<string>('DB_PASSWORD'),
         database: config.getOrThrow<string>('DB_NAME'),
         autoLoadEntities: true,
-        synchronize: false, // SOLO desarrollo
+        synchronize: true, // SOLO desarrollo
         ssl: {
           rejectUnauthorized: false,
         },
@@ -46,6 +47,8 @@ import { AddressesModule } from './addresses/addresses.module';
     AddressesModule,
 
     PaymentsModule,
+
+    
   ],
 })
 export class AppModule {}

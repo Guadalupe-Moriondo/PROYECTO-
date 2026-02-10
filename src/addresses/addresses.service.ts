@@ -21,10 +21,16 @@ export class AddressesService {
       await this.clearDefault(userId);
     }
 
-    const address = this.addressRepo.create({
-      ...dto,
-      user: { id: userId },
+    const count = await this.addressRepo.count({
+    where: { user: { id: userId } },
     });
+
+    const address = this.addressRepo.create({
+    ...dto,
+    isDefault: dto.isDefault ?? count === 0,
+    user: { id: userId },
+    });
+
 
     return this.addressRepo.save(address);
   }
@@ -37,8 +43,7 @@ export class AddressesService {
 
   async findOne(id: number, userId: number) {
     const address = await this.addressRepo.findOne({
-      where: { id },
-      relations: ['user'],
+      where: { id, user: { id: userId } },
     });
 
     if (!address) {

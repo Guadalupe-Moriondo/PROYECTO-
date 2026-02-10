@@ -6,6 +6,8 @@ import { OrderItem } from './order-item.entity';
 import { OneToMany } from 'typeorm';
 import { Payment } from '../../payments/entities/payment.entity';
 import { Address } from '../../addresses/entities/address.entity';
+import { OrderStatusHistory } from './order-status-history.entity';
+import { Review } from '../../reviews/entities/review.entity';
 @Entity()
 export class Order {
   @PrimaryGeneratedColumn()
@@ -14,7 +16,7 @@ export class Order {
   @Column({
     type: 'enum',
     enum: OrderStatus,
-    default: OrderStatus.PENDING,
+    default: OrderStatus.CONFIRMED,
   })
   status: OrderStatus;
   
@@ -59,6 +61,16 @@ export class Order {
 
   @ManyToOne(() => Address, { eager: true })
   address: Address;
+
+  @OneToMany(
+  () => OrderStatusHistory,
+  history => history.order,
+  )
+  statusHistory: OrderStatusHistory[];
+
+  @OneToMany(() => Review, review => review.order)
+  reviews: Review[];
+
 
    
 }

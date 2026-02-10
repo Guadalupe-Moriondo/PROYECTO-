@@ -37,7 +37,7 @@ export class PaymentsService {
     throw new ForbiddenException('Not your order');
   }
 
-  if (order.status !== OrderStatus.PENDING) {
+  if (order.status !== OrderStatus.CART) {
     throw new BadRequestException('Order is not delivered yet');
   }
 
