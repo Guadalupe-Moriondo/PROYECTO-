@@ -1,20 +1,27 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: 'JWT_SECRET_KEY',
     });
   }
 
-  validate(payload: any) {
-    return {
-      userId: payload.sub,
-      role: payload.role,
-    };
+ async validate(payload: any) {
+    const user = await this.userRepo.findOne({
+      where: { id: payload.sub },
+      select: ['id', 'email', 'name', 'role'],
+    });
+
+    return user;
   }
 }

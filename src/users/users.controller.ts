@@ -30,10 +30,36 @@ export class UsersController {
     return this.usersService.create(dto);
   }
 
+
+
   @Post('login')
   login(@Body() dto: LoginDto) {
   return this.usersService.login(dto.email, dto.password);
 }
+
+@UseGuards(JwtAuthGuard)
+@Get('me')
+getMe(@Req() req) {
+  console.log('REQ.USER:', req.user);
+  return req.user;
+}
+
+@UseGuards(JwtAuthGuard)
+@Patch('me')
+updateMe(
+  @CurrentUser() user: any,
+  @Body() dto: UpdateUserDto,
+) {
+  return this.usersService.updateMe(user.userId, dto);
+}
+
+  @UseGuards(JwtAuthGuard)
+  @Get('favorites/restaurants')
+  getFavorites(@Req() req) {
+    return this.usersService.getFavoriteRestaurants(
+     req.user.userId,
+    );
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post('favorites/restaurants/:id')
@@ -46,6 +72,30 @@ export class UsersController {
      +restaurantId,
     );
 }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('favorites/restaurants/:id')
+  removeFavorite(
+    @Req() req,
+    @Param('id') restaurantId: string,
+  ) {
+    return this.usersService.removeFavoriteRestaurant(
+      req.user.userId,
+      +restaurantId,
+    );
+  }
+
+    @UseGuards(JwtAuthGuard)
+  @Patch('drivers/me/availability')
+  setAvailability(
+    @CurrentUser() user: any,
+    @Body('isAvailable') isAvailable: boolean,
+  ) {
+    return this.usersService.setDriverAvailability(
+     user.userId,
+     isAvailable,
+    );
+  }
 
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -61,13 +111,6 @@ export class UsersController {
     return this.usersService.findOne(+id);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('favorites/restaurants')
-  getFavorites(@Req() req) {
-    return this.usersService.getFavoriteRestaurants(
-     req.user.userId,
-    );
-  }
 
 
   @UseGuards(JwtAuthGuard)
@@ -87,44 +130,9 @@ export class UsersController {
     return this.usersService.remove(+id);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Delete('favorites/restaurants/:id')
-  removeFavorite(
-    @Req() req,
-    @Param('id') restaurantId: string,
-  ) {
-    return this.usersService.removeFavoriteRestaurant(
-      req.user.userId,
-      +restaurantId,
-    );
-  }
 
-  @UseGuards(JwtAuthGuard)
-@Get('me')
-getMe(@CurrentUser() user: any) {
-  return this.usersService.findMe(user.userId);
-}
 
-@UseGuards(JwtAuthGuard)
-@Patch('me')
-updateMe(
-  @CurrentUser() user: any,
-  @Body() dto: UpdateUserDto,
-) {
-  return this.usersService.updateMe(user.userId, dto);
-}
 
-  @UseGuards(JwtAuthGuard)
-  @Patch('drivers/me/availability')
-  setAvailability(
-    @CurrentUser() user: any,
-    @Body('isAvailable') isAvailable: boolean,
-  ) {
-    return this.usersService.setDriverAvailability(
-     user.userId,
-     isAvailable,
-    );
-  }
 
 
 

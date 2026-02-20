@@ -96,13 +96,13 @@ async updateMe(userId: number, dto: UpdateUserDto) {
 async login(email: string, password: string) {
   const user = await this.userRepo.findOne({
     where: { email },
+    select: ['id', 'email', 'password', 'role'],
   });
 
   if (!user || !user.password) {
     throw new UnauthorizedException('Invalid credentials');
   }
-  console.log('DB password hash:', user.password);
-  console.log('Password from body:', password);
+  
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) {
     throw new UnauthorizedException('Invalid credentials');
@@ -111,6 +111,7 @@ async login(email: string, password: string) {
   const payload = {
     sub: user.id,
     role: user.role,
+    
   };
 
   return {
