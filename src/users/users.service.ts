@@ -110,8 +110,7 @@ async login(email: string, password: string) {
 
   const payload = {
     sub: user.id,
-    role: user.role,
-    
+    role: user.role,   
   };
 
   return {
@@ -197,6 +196,37 @@ async setDriverAvailability(
   return this.userRepo.save(user);
 }
 
+async updateRole(id: number, role: UserRole) {
+  const user = await this.userRepo.findOne({
+    where: { id },
+  });
+
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  user.role = role;
+  return this.userRepo.save(user);
+}
 
 
+async createAdminIfNotExists() {
+  const adminExists = await this.userRepo.findOne({
+    where: { role: UserRole.ADMIN },
+  });
+
+  if (!adminExists) {
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+
+    const admin = this.userRepo.create({
+      name: 'Admin',
+      email: 'admin@admin.com',
+      password: hashedPassword,
+      role: UserRole.ADMIN,
+    });
+
+    await this.userRepo.save(admin);
+    console.log('✅ Admin creado automáticamente');
+  }
+}
 }

@@ -5,22 +5,33 @@ import { ForbiddenException } from '@nestjs/common';
 import { Restaurant } from './entities/restaurant.entity';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class RestaurantsService {
   constructor(
     @InjectRepository(Restaurant)
     private readonly restaurantRepository: Repository<Restaurant>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
-  create(dto: CreateRestaurantDto, ownerId: number) {
+  async create(dto: CreateRestaurantDto, ownerId: number) {
+  const owner = await this.userRepository.findOne({
+    where: { id: ownerId },
+  });
+
+  if (!owner) {
+    throw new NotFoundException('Owner not found');
+  }
+
   const restaurant = this.restaurantRepository.create({
     ...dto,
-    owner: { id: ownerId },
+    owner,
   });
 
   return this.restaurantRepository.save(restaurant);
-  }
+}
 
 
   async findAll(filters: { search?: string; category?: string }) {

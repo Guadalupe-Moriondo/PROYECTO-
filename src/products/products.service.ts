@@ -16,7 +16,7 @@ export class ProductsService {
     @InjectRepository(Restaurant)
     private readonly restaurantRepo: Repository<Restaurant>,
   ) {}
-
+    
   async create(dto: CreateProductDto,userId: number) {
     const restaurant = await this.restaurantRepo.findOne({
       where: { id: dto.restaurantId },
@@ -37,7 +37,7 @@ export class ProductsService {
       price: dto.price,
       restaurant,
     });
-
+    
     return this.productRepo.save(product);
   }
 

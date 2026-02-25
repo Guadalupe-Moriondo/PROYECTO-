@@ -29,8 +29,11 @@ export class RestaurantsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.VENDOR)
   @Post()
-  create(@Body() dto: CreateRestaurantDto,@CurrentUser() user: any,) {
-    return this.restaurantsService.create(dto,user.userId);
+  create(@Body() dto: CreateRestaurantDto,@CurrentUser() user: any,)
+  
+  {
+    console.log(user);
+    return this.restaurantsService.create(dto,user.id);
   }
 
   @Get()
@@ -57,7 +60,7 @@ export class RestaurantsController {
   @Body() dto: UpdateRestaurantDto,
   @CurrentUser() user: any,
   ) {
-  return this.restaurantsService.update(+id, dto, user.sub);
+  return this.restaurantsService.update(+id, dto, user.id);
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -67,6 +70,6 @@ export class RestaurantsController {
     @Param('id') id: string,
     @CurrentUser() user: any,
   ) {
-  return this.restaurantsService.remove(+id, user.sub);
+  return this.restaurantsService.remove(+id, user.id);
 }
 }

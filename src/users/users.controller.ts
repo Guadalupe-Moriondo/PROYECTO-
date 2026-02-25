@@ -30,8 +30,6 @@ export class UsersController {
     return this.usersService.create(dto);
   }
 
-
-
   @Post('login')
   login(@Body() dto: LoginDto) {
   return this.usersService.login(dto.email, dto.password);
@@ -50,14 +48,14 @@ updateMe(
   @CurrentUser() user: any,
   @Body() dto: UpdateUserDto,
 ) {
-  return this.usersService.updateMe(user.userId, dto);
+  return this.usersService.updateMe(user.id, dto);
 }
 
   @UseGuards(JwtAuthGuard)
   @Get('favorites/restaurants')
   getFavorites(@Req() req) {
     return this.usersService.getFavoriteRestaurants(
-     req.user.userId,
+     req.user.id,
     );
   }
 
@@ -68,7 +66,7 @@ updateMe(
     @Param('id') restaurantId: string,
   ) {
     return this.usersService.addFavoriteRestaurant(
-     req.user.userId,
+     req.user.id,
      +restaurantId,
     );
 }
@@ -80,7 +78,7 @@ updateMe(
     @Param('id') restaurantId: string,
   ) {
     return this.usersService.removeFavoriteRestaurant(
-      req.user.userId,
+      req.user.id,
       +restaurantId,
     );
   }
@@ -92,10 +90,12 @@ updateMe(
     @Body('isAvailable') isAvailable: boolean,
   ) {
     return this.usersService.setDriverAvailability(
-     user.userId,
+     user.id,
      isAvailable,
     );
   }
+
+
 
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -130,7 +130,15 @@ updateMe(
     return this.usersService.remove(+id);
   }
 
-
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
+@Patch(':id/role')
+updateRole(
+  @Param('id') id: string,
+  @Body('role') role: UserRole,
+) {
+  return this.usersService.updateRole(+id, role);
+}
 
 
 

@@ -27,9 +27,11 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.VENDOR)
   @Post()
-  create(@Body() dto: CreateProductDto, @CurrentUser() user: any) {
-    return this.productsService.create(dto,user.userId);
-  }
+create(@Body() dto: any, @CurrentUser() user: any) {
+  console.log('DTO:', dto);
+  console.log('USER:', user);
+  return this.productsService.create(dto, user.id);
+}
 
   @Get()
   findAll(@Query('restaurantId') restaurantId?: string) {
@@ -53,14 +55,14 @@ export class ProductsController {
     @Body() dto: UpdateProductDto,
     @CurrentUser() user: any
   ) {
-    return this.productsService.update(+id, dto,user.userId);
+    return this.productsService.update(+id, dto,user.id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.VENDOR)
   @Delete(':id')
   remove(@Param('id') id: string,@CurrentUser() user: any) {
-    return this.productsService.remove(+id,user.userId);
+    return this.productsService.remove(+id,user.id);
   }
 }
 

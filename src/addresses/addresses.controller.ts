@@ -26,12 +26,12 @@ export class AddressesController {
     @Body() dto: CreateAddressDto,
     @CurrentUser() user: any,
   ) {
-    return this.addressesService.create(dto, user.userId);
+    return this.addressesService.create(dto, user.id);
   }
 
   @Get()
   findAll(@CurrentUser() user: any) {
-    return this.addressesService.findAll(user.userId);
+    return this.addressesService.findAll(user.id);
   }
 
   @Get(':id')
@@ -39,7 +39,7 @@ export class AddressesController {
     @Param('id') id: string,
     @CurrentUser() user: any,
   ) {
-    return this.addressesService.findOne(+id, user.userId);
+    return this.addressesService.findOne(+id, user.id);
   }
 
   @Patch(':id')
@@ -48,7 +48,7 @@ export class AddressesController {
     @Body() dto: UpdateAddressDto,
     @CurrentUser() user: any,
   ) {
-    return this.addressesService.update(+id, dto, user.userId);
+    return this.addressesService.update(+id, dto, user.id);
   }
 
   @Delete(':id')
@@ -56,6 +56,6 @@ export class AddressesController {
     @Param('id') id: string,
     @CurrentUser() user: any,
   ) {
-    return this.addressesService.remove(+id, user.userId);
+    return this.addressesService.remove(+id, user.id);
   }
 }

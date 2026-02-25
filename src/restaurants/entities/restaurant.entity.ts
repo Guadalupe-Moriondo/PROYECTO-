@@ -12,6 +12,7 @@ import { Review } from '../../reviews/entities/review.entity';
 import { User } from '../../users/entities/user.entity';
 
 
+
 @Entity()
 export class Restaurant {
   @PrimaryGeneratedColumn()
