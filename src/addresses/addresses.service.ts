@@ -50,10 +50,6 @@ export class AddressesService {
       throw new NotFoundException('Address not found');
     }
 
-    if (address.user.id !== userId) {
-      throw new ForbiddenException();
-    }
-
     return address;
   }
 

@@ -3,6 +3,9 @@ import { User } from '../../users/entities/user.entity';
 import { Restaurant } from '../../restaurants/entities/restaurant.entity';
 import { Product } from '../../products/entities/product.entity';
 import { Order } from '../../orders/entities/order.entity';
+
+
+
 @Entity()
 export class Review {
   @PrimaryGeneratedColumn()
@@ -29,8 +32,9 @@ export class Review {
   @JoinColumn({ name: 'product_id' })
   product: Product;
 
-  @ManyToOne(() => Order)
+  @ManyToOne(() => Order, order => order.reviews)
   order: Order;
+
 
   
 }

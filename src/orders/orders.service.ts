@@ -50,44 +50,50 @@ export class OrdersService {
   // 🧑 USER → CREAR PEDIDO
   // =========================
   async create(dto: CreateOrderDto, userId: number) {
-    const restaurant = await this.restaurantRepository.findOne({
-      where: { id: dto.restaurantId },
-      relations: ['owner'],
-    });
+  const restaurant = await this.restaurantRepository.findOne({
+    where: { id: dto.restaurantId },
+    relations: ['owner'],
+  });
 
-    if (!restaurant) {
-      throw new NotFoundException('Restaurant not found');
-    }
+  if (!restaurant) {
+    throw new NotFoundException('Restaurant not found');
+  }
 
-    const address = await this.addressRepo.findOne({
+  const address = await this.addressRepo.findOne({
     where: { id: dto.addressId },
     relations: ['user'],
-    });
+  });
 
-    if (!address) {
+  if (!address) {
     throw new NotFoundException('Address not found');
-    }
+  }
 
-  // 🔐 ownership de address
-    if (address.user.id !== userId) {
+  if (address.user.id !== userId) {
     throw new ForbiddenException('Not your address');
-    }
+  }
 
-    const order = this.orderRepository.create({
-      total: 0,
-      status: OrderStatus.CART,
-      user: { id: userId },
-      restaurant: { id: restaurant.id },
-      vendor: { id: restaurant.owner.id },
-      address: { id: address.id },
-    });
+  const order = this.orderRepository.create({
+    total: 0,
+    status: OrderStatus.CART,
+
+    user: { id: userId },
+    restaurant: { id: restaurant.id },
+    vendor: { id: restaurant.owner.id },
+    address: { id: address.id },
+
+    // 🔥 COPIAR DIRECCIÓN (MUY IMPORTANTE)
+    deliveryStreet: address.street,
+    deliveryCity: address.city,
+    deliveryState: address.state,
+    deliveryZipCode: address.zipCode,
+  });
 
     const savedOrder = await this.orderRepository.save(order);
 
       await this.addStatusHistory(
       savedOrder,
-      OrderStatus.CONFIRMED,
-      { userId, role: UserRole.USER },
+      OrderStatus.CART,
+      { id: userId, role: UserRole.USER },
     );
 
     return savedOrder;
@@ -95,6 +101,7 @@ export class OrdersService {
 
     
   }
+
 
  async createCart(userId: number) {
   const existing = await this.orderRepository.findOne({
@@ -117,7 +124,7 @@ export class OrdersService {
   // =========================
   // 📋 LISTAR PEDIDOS POR ROL
   // =========================
-  async findAllByRole(user: { userId: number; role: UserRole }) {
+  async findAllByRole(user: { id: number; role: UserRole }) {
     // 👑 ADMIN
     if (user.role === UserRole.ADMIN) {
       return this.orderRepository.find({
@@ -129,7 +136,7 @@ export class OrdersService {
     // 👤 USER
     if (user.role === UserRole.USER) {
       return this.orderRepository.find({
-        where: { user: { id: user.userId } },
+        where: { user: { id: user.id } },
         relations: ['restaurant', 'driver', 'vendor'],
       });
     }
@@ -137,7 +144,7 @@ export class OrdersService {
     // 🏪 VENDOR
     if (user.role === UserRole.VENDOR) {
       return this.orderRepository.find({
-        where: { vendor: { id: user.userId } },
+        where: { vendor: { id: user.id } },
         relations: ['user', 'restaurant', 'driver'],
       });
     }
@@ -145,13 +152,15 @@ export class OrdersService {
     // 🛵 DRIVER
     if (user.role === UserRole.DRIVER) {
       return this.orderRepository.find({
-        where: { driver: { id: user.userId } },
+        where: { driver: { id: user.id} },
         relations: ['restaurant', 'vendor'],
       });
     }
 
     return [];
   }
+
+
 
   // =========================
   // 🔍 OBTENER PEDIDO
@@ -169,6 +178,8 @@ export class OrdersService {
 
     return order;
   }
+
+
 
   private async findOrder(orderId: number) {
   const order = await this.orderRepository.findOne({
@@ -195,70 +206,77 @@ export class OrdersService {
     return { message: `Order ${id} deleted successfully` };
   }
 
+
+
+
   // =========================
   // 🔄 CAMBIAR ESTADO
   // =========================
- async updateStatus(
-  id: number,
+ async updateVendorStatus(
+  orderId: number,
   dto: UpdateOrderDto,
-  user: { userId: number; role: UserRole },
+  user: { id: number; role: UserRole },
 ) {
-  const order = await this.findOne(id);
+  const order = await this.findOne(orderId);
 
-  if (!dto.status) {
-    throw new BadRequestException('Status is required');
+  // 🔐 verificar que sea su orden
+  if (order.vendor.id !== user.id) {
+    throw new ForbiddenException('This is not your order');
   }
 
-  // ⛔ evitar guardar el mismo estado
-  if (order.status === dto.status) {
-    return order;
+  const allowedTransitions = {
+    [OrderStatus.CONFIRMED]: [OrderStatus.ACCEPTED],
+    [OrderStatus.ACCEPTED]: [OrderStatus.PREPARING],
+    [OrderStatus.PREPARING]: [OrderStatus.READY],
+  };
+
+  const possibleStatuses = allowedTransitions[order.status];
+
+  if (!possibleStatuses?.includes(dto.status)) {
+    throw new BadRequestException(
+      `Cannot change status from ${order.status} to ${dto.status}`,
+    );
   }
 
-  // 🏪 VENDOR
-  if (user.role === UserRole.VENDOR) {
-    const allowed = [
-      OrderStatus.ACCEPTED,
-      OrderStatus.PREPARING,
-      OrderStatus.READY,
-    ];
+  order.status = dto.status;
+  const saved = await this.orderRepository.save(order);
 
-    if (!allowed.includes(dto.status)) {
-      throw new BadRequestException(
-        'Vendor cannot set this order status',
-      );
-    }
+  await this.addStatusHistory(saved, dto.status, user);
+
+  return saved;
+}
+
+
+
+async updateDriverStatus(
+  orderId: number,
+  dto: UpdateOrderDto,
+  user: { id: number; role: UserRole },
+) {
+  const order = await this.findOne(orderId);
+
+  // 🔐 Debe estar asignado a él
+  if (!order.driver || order.driver.id !== user.id) {
+    throw new ForbiddenException('Order not assigned to you');
   }
 
-  // 🛵 DRIVER
-  if (user.role === UserRole.DRIVER) {
-    const allowed = [
-      OrderStatus.ON_THE_WAY,
-      OrderStatus.DELIVERED,
-    ];
+  const allowedTransitions = {
+    [OrderStatus.ON_THE_WAY]: [OrderStatus.DELIVERED],
+  };
 
-    if (!allowed.includes(dto.status)) {
-      throw new BadRequestException(
-        'Driver cannot set this order status',
-      );
-    }
+  const possibleStatuses = allowedTransitions[order.status];
 
-    // 🔒 evitar pisar otro driver
-    if (order.driver && order.driver.id !== user.userId) {
-      throw new ForbiddenException(
-        'Order assigned to another driver',
-      );
-    }
-
-    // 🧷 autoasignación segura
-    order.driver = { id: user.userId } as any;
+  if (!possibleStatuses?.includes(dto.status)) {
+    throw new BadRequestException(
+      `Cannot change status from ${order.status} to ${dto.status}`,
+    );
   }
 
   order.status = dto.status;
 
   const saved = await this.orderRepository.save(order);
 
-  // 🕒 historial
-  await this.addStatusHistory(saved, dto.status,user);
+  await this.addStatusHistory(saved, dto.status, user);
 
   return saved;
 }
@@ -276,6 +294,8 @@ export class OrdersService {
 
   await this.orderRepository.update(orderId, { total });
 }
+
+
 
 async addItem(
   orderId: number,
@@ -327,6 +347,8 @@ async addItem(
 }
 
 
+
+
 async removeItem(
   orderId: number,
   itemId: number,
@@ -360,6 +382,8 @@ async removeItem(
 
   return { message: 'Item removed successfully' };
 }
+
+
 
 async findAvailableForDrivers() {
   return this.orderRepository
@@ -403,7 +427,7 @@ async assignDriver(orderId: number, driverId: number) {
 
   const saved = await this.orderRepository.save(order);
   await this.addStatusHistory(saved, OrderStatus.ON_THE_WAY,{
-  userId: driver.id,
+  id: driver.id,
   role: UserRole.DRIVER,});
 
   return saved;
@@ -415,12 +439,12 @@ async assignDriver(orderId: number, driverId: number) {
 private async addStatusHistory(
   order: Order,
   status: OrderStatus,
-  actor: { userId: number; role: UserRole },
+  actor: { id: number; role: UserRole },
 ) {
   const history = this.historyRepo.create({
     order,
     status,
-    changedBy: { id: actor.userId } as any,
+    changedBy: { id: actor.id } as any,
     role: actor.role,
   });
 
@@ -491,32 +515,35 @@ async updateItemQuantity(
   return item;
 }
 
-async confirmOrder(orderId: number, userId: number) {
-  const order = await this.findOrder(orderId);
+async confirmOrder(
+  id: number,
+  userId: number,
+) {
+  const order = await this.findOne(id);
 
   if (order.user.id !== userId) {
-    throw new ForbiddenException();
+    throw new ForbiddenException('This is not your order');
   }
 
   if (order.status !== OrderStatus.CART) {
-    throw new BadRequestException('Order already confirmed');
+    throw new BadRequestException(
+      `Order cannot be confirmed because it is ${order.status}`,
+    );
   }
 
   order.status = OrderStatus.CONFIRMED;
+  await this.orderRepository.save(order);
 
-  const saved = await this.orderRepository.save(order);
-
-  await this.addStatusHistory(saved, OrderStatus.CONFIRMED, {
-    userId,
-    role: UserRole.USER,
-  });
-
-  return saved;
+  return {
+    id: order.id,
+    status: order.status,
+    message: 'Order confirmed successfully',
+  };
 }
 
 async cancelOrder(
   orderId: number,
-  user: { userId: number; role: UserRole },
+  user: { id: number; role: UserRole },
 ) {
   const order = await this.findOne(orderId);
 
@@ -527,7 +554,7 @@ async cancelOrder(
 
   // 👤 USER
   if (user.role === UserRole.USER) {
-    if (order.user.id !== user.userId) {
+    if (order.user.id !== user.id) {
       throw new ForbiddenException();
     }
 
@@ -545,7 +572,7 @@ async cancelOrder(
 
   // 🏪 VENDOR
   if (user.role === UserRole.VENDOR) {
-    if (order.vendor.id !== user.userId) {
+    if (order.vendor.id !== user.id) {
       throw new ForbiddenException();
     }
 
@@ -572,5 +599,38 @@ async cancelOrder(
   return saved;
 }
 
+async findOneFormatted(id: number) {
+  const order = await this.findOne(id);
+
+  return {
+    id: order.id,
+    status: order.status,
+    total: Number(order.total),
+
+    customer: {
+      id: order.user.id,
+      name: order.user.name,
+    },
+
+    delivery: {
+      street: order.deliveryStreet,
+      city: order.deliveryCity,
+      state: order.deliveryState,
+      zipCode: order.deliveryZipCode,
+    },
+
+    restaurant: {
+      id: order.restaurant.id,
+      name: order.restaurant.name,
+    },
+
+    items: order.items.map(item => ({
+      id: item.id,
+      product: item.product.name,
+      quantity: item.quantity,
+      price: Number(item.price),
+    })),
+  };
+}
 
 }

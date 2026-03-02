@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, ParseIntPipe } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -11,7 +11,7 @@ import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/user-role.enum';
 import { Req } from '@nestjs/common';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
@@ -21,7 +21,7 @@ export class OrdersController {
     @Body() dto: CreateOrderDto,
     @CurrentUser() user: any,
   ) {
-    return this.ordersService.create(dto, user.userId);
+    return this.ordersService.create(dto, user.id);
   }
 
   @Get()
@@ -29,40 +29,50 @@ export class OrdersController {
     return this.ordersService.findAllByRole(user);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.ordersService.findOne(+id);
-  }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.DRIVER)
   @Get('available')
   findAvailable() {
     return this.ordersService.findAvailableForDrivers();
   }
 
+
   @Get(':id/status-history')
   getStatusHistory(@Param('id') id: string) {
     return this.ordersService.getStatusHistory(+id);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('driver/earnings')
-  getMyEarnings(@Req() req) {
-    return this.ordersService.getDriverEarnings(req.user.userId);
+    @Get(':id')
+  findOne(@Param('id',ParseIntPipe) id: string) {
+    return this.ordersService.findOneFormatted(+id);
   }
 
-
-
-
-  @Roles(UserRole.DRIVER)
-  @Patch(':id/status')
-  updateStatus(
+  
+  @Get('driver/earnings')
+  getMyEarnings(@Req() req) {
+    return this.ordersService.getDriverEarnings(req.user.id);
+  }
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.VENDOR)
+  @Patch(':id/vendor-status')
+  updateVendorStatus(
     @Param('id') id: string,
     @Body() dto: UpdateOrderDto,
     @CurrentUser() user: any,
   ) {
-    return this.ordersService.updateStatus(+id, dto, user);
+    return this.ordersService.updateVendorStatus(+id, dto, user);
+  }
+
+    @UseGuards(RolesGuard)
+  @Roles(UserRole.DRIVER)
+  @Patch(':id/driver-status')
+  updateDriverStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateOrderDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.ordersService.updateDriverStatus(+id, dto, user);
   }
 
   @Delete(':id')
@@ -76,19 +86,18 @@ addItem(
   @Body() dto: AddOrderItemDto,
   @CurrentUser() user: any,
 ) {
-  return this.ordersService.addItem(+orderId, dto, user.userId);
+  return this.ordersService.addItem(+orderId, dto, user.id);
 }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 @Roles(UserRole.DRIVER)
 @Post(':id/accept')
 acceptOrder(
   @Param('id') id: string,
   @CurrentUser() user: any,
 ) {
-  return this.ordersService.assignDriver(+id, user.userId);
+  return this.ordersService.assignDriver(+id, user.id);
 }
-
 
   @Delete(':id/items/:itemId')
 removeItem(
@@ -99,7 +108,17 @@ removeItem(
   return this.ordersService.removeItem(
     +orderId,
     +itemId,
-    user.userId,
+    user.id,
   );
+}
+
+@UseGuards(RolesGuard)
+@Roles(UserRole.USER)
+@Post(':id/confirm')
+confirm(
+  @Param('id', ParseIntPipe) id: number,
+  @CurrentUser() user: any,
+) {
+  return this.ordersService.confirmOrder(id,user.id);
 }
 }
