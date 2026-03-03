@@ -1,7 +1,7 @@
 import {
   Controller,
   Post,
-  Get,
+  Patch,
   Param,
   Body,
   UseGuards,
@@ -10,7 +10,7 @@ import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../users/current-user.decorator';
-
+import { ParseIntPipe } from '@nestjs/common';
 
 
 
@@ -24,6 +24,15 @@ export class PaymentsController {
     @Body() dto: CreatePaymentDto,
     @CurrentUser() user: any,
   ) {
-    return this.paymentsService.create(dto, user.userId);
+    return this.paymentsService.create(dto, user.id);
   }
+
+  @UseGuards(JwtAuthGuard)
+@Patch(':id/confirm')
+confirmPayment(
+  @Param('id', ParseIntPipe) paymentId: number,
+) {
+  return this.paymentsService.confirmPayment(paymentId);
 }
+}
+

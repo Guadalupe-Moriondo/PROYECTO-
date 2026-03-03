@@ -43,10 +43,33 @@ export class OrdersController {
     return this.ordersService.getStatusHistory(+id);
   }
 
+    @UseGuards(RolesGuard)
+@Roles(UserRole.USER)
+@Post(':id/pay')
+payOrder(
+  @Param('id', ParseIntPipe) id: number,
+  @CurrentUser() user: any,
+) {
+  return this.ordersService.payOrder(id, user.id);
+}
+
+@UseGuards(RolesGuard)
+@Roles(UserRole.USER)
+@Post(':id/confirm')
+confirm(
+  @Param('id', ParseIntPipe) id: number,
+  @CurrentUser() user: any,
+) {
+  return this.ordersService.confirmOrder(id,user.id);
+}
+
+
     @Get(':id')
   findOne(@Param('id',ParseIntPipe) id: string) {
     return this.ordersService.findOneFormatted(+id);
   }
+
+  
 
   
   @Get('driver/earnings')
@@ -112,13 +135,5 @@ removeItem(
   );
 }
 
-@UseGuards(RolesGuard)
-@Roles(UserRole.USER)
-@Post(':id/confirm')
-confirm(
-  @Param('id', ParseIntPipe) id: number,
-  @CurrentUser() user: any,
-) {
-  return this.ordersService.confirmOrder(id,user.id);
-}
+
 }

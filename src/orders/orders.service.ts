@@ -225,9 +225,9 @@ export class OrdersService {
   }
 
   const allowedTransitions = {
-    [OrderStatus.CONFIRMED]: [OrderStatus.ACCEPTED],
-    [OrderStatus.ACCEPTED]: [OrderStatus.PREPARING],
-    [OrderStatus.PREPARING]: [OrderStatus.READY],
+  [OrderStatus.PAID]: [OrderStatus.ACCEPTED],
+  [OrderStatus.ACCEPTED]: [OrderStatus.PREPARING],
+  [OrderStatus.PREPARING]: [OrderStatus.READY],
   };
 
   const possibleStatuses = allowedTransitions[order.status];
@@ -253,13 +253,15 @@ async updateDriverStatus(
   dto: UpdateOrderDto,
   user: { id: number; role: UserRole },
 ) {
+  // Buscar la orden
   const order = await this.findOne(orderId);
 
-  // 🔐 Debe estar asignado a él
+  // 🔐 Validar que el driver esté asignado
   if (!order.driver || order.driver.id !== user.id) {
     throw new ForbiddenException('Order not assigned to you');
   }
 
+  // 🔄 Transiciones permitidas solo para delivery
   const allowedTransitions = {
     [OrderStatus.ON_THE_WAY]: [OrderStatus.DELIVERED],
   };
@@ -272,10 +274,22 @@ async updateDriverStatus(
     );
   }
 
+  // 🚫 Validar que la orden haya sido pagada antes de entregar
+  if (dto.status === OrderStatus.DELIVERED && order.status === OrderStatus.ON_THE_WAY) {
+    // Se asume que si llegó a ON_THE_WAY, el pedido fue PAID → ACCEPTED → ... → READY
+    // Si quieres validar explícitamente:
+    if (![OrderStatus.PAID, OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY].includes(order.status)) {
+      throw new BadRequestException('Order must be paid before delivery');
+    }
+  }
+
+  // Cambiar estado
   order.status = dto.status;
 
+  // Guardar cambios
   const saved = await this.orderRepository.save(order);
 
+  // Registrar historial
   await this.addStatusHistory(saved, dto.status, user);
 
   return saved;
@@ -630,6 +644,34 @@ async findOneFormatted(id: number) {
       quantity: item.quantity,
       price: Number(item.price),
     })),
+  };
+}
+
+async payOrder(orderId: number, userId: number) {
+  const order = await this.findOne(orderId);
+
+  if (order.user.id !== userId) {
+    throw new ForbiddenException('This is not your order');
+  }
+
+  // Solo se puede pagar si la orden está CONFIRMED
+  if (order.status !== OrderStatus.CONFIRMED) {
+    throw new BadRequestException('Order cannot be paid now');
+  }
+
+  // Cambiamos el estado a PAID
+  order.status = OrderStatus.PAID; // ⚠️ Asegúrate de agregar PAID a tu enum OrderStatus
+  const saved = await this.orderRepository.save(order);
+
+  await this.addStatusHistory(saved, OrderStatus.PAID, {
+    id: userId,
+    role: UserRole.USER,
+  });
+
+  return {
+    id: saved.id,
+    status: saved.status,
+    message: 'Order paid successfully',
   };
 }
 

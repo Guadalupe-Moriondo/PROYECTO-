@@ -37,9 +37,9 @@ export class PaymentsService {
     throw new ForbiddenException('Not your order');
   }
 
-  if (order.status !== OrderStatus.CART) {
-    throw new BadRequestException('Order is not delivered yet');
-  }
+  if (![OrderStatus.CART, OrderStatus.CONFIRMED].includes(order.status)) {
+  throw new BadRequestException('Order cannot be paid now');
+}
 
   const existingPayment = await this.paymentRepo.findOne({
     where: { order: { id: order.id } },
