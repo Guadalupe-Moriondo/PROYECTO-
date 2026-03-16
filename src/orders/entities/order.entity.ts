@@ -4,10 +4,10 @@ import { Restaurant } from '../../restaurants/entities/restaurant.entity';
 import { OrderStatus } from '../order-status.enum';  
 import { OrderItem } from './order-item.entity';
 import { OneToMany } from 'typeorm';
-import { Payment } from '../../payments/entities/payment.entity';
 import { Address } from '../../addresses/entities/address.entity';
 import { OrderStatusHistory } from './order-status-history.entity';
 import { Review } from '../../reviews/entities/review.entity';
+
 @Entity()
 export class Order {
   @PrimaryGeneratedColumn()
@@ -47,17 +47,12 @@ export class Order {
   @JoinColumn({ name: 'driver_id' })
   driver: User;
 
-
   @ManyToOne(() => User)
   @JoinColumn({ name: 'vendor_id' })
   vendor: User;
 
-  
   @OneToMany(() => OrderItem, item => item.order)
   items: OrderItem[];
-
-  @OneToMany(() => Payment, payment => payment.order)
-  payments: Payment[];
 
   @ManyToOne(() => Address, { eager: true })
   address: Address;
@@ -69,8 +64,5 @@ export class Order {
   statusHistory: OrderStatusHistory[];
 
   @OneToMany(() => Review, review => review.order)
-  reviews: Review[];
-
-
-   
+  reviews: Review[];  
 }

@@ -1,16 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-} from '@nestjs/common';
-
+import {Controller,Get,Post,Body,Patch,Param,Delete,Query,} from '@nestjs/common';
 import { ProductsService } from './products.service';
-import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CurrentUser } from '../users/current-user.decorator';
 import { UseGuards } from '@nestjs/common';
@@ -27,7 +16,7 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.VENDOR)
   @Post()
-create(@Body() dto: any, @CurrentUser() user: any) {
+  create(@Body() dto: any, @CurrentUser() user: any) {
   console.log('DTO:', dto);
   console.log('USER:', user);
   return this.productsService.create(dto, user.id);
@@ -40,7 +29,6 @@ create(@Body() dto: any, @CurrentUser() user: any) {
   }
   return this.productsService.findAll();
 }
-
 
   @Get(':id')
   findOne(@Param('id') id: string) {

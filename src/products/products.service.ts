@@ -26,7 +26,7 @@ export class ProductsService {
     if (!restaurant) {
       throw new NotFoundException('Restaurant not found');
     }
-    // ❌ Seguridad: solo el dueño puede crear productos
+    
     if (restaurant.owner.id !== userId) {
     throw new ForbiddenException('You are not the owner of this restaurant');
     }
@@ -47,7 +47,6 @@ export class ProductsService {
     relations: ['restaurant'],
   });
 }
-
 
   async findOne(id: number) {
     const product = await this.productRepo.findOne({
@@ -107,6 +106,4 @@ export class ProductsService {
     },
   });
 }
-
-
 }

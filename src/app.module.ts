@@ -5,7 +5,6 @@ import { UsersModule } from './users/users.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { RestaurantsModule } from './restaurants/restaurants.module';
 import { ProductsModule } from './products/products.module';
-import { PaymentsModule } from './payments/payments.module';
 import { OrdersModule } from './orders/orders.module';
 import { AddressesModule } from './addresses/addresses.module';
 
@@ -46,7 +45,7 @@ import { AddressesModule } from './addresses/addresses.module';
 
     AddressesModule,
 
-    PaymentsModule,
+    
 
     
   ],

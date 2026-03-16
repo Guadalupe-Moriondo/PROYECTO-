@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-} from '@nestjs/common';
-
+import {Controller,Get,Post,Body,Patch,Param,Delete,Query,} from '@nestjs/common';
 import { RestaurantsService } from './restaurants.service';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
 import { UpdateRestaurantDto } from './dto/update-restaurant.dto';
@@ -44,9 +34,6 @@ export class RestaurantsController {
     return this.restaurantsService.findAll({ search, category });
   }
 
-
-  
-
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.restaurantsService.findOne(+id);
@@ -60,16 +47,16 @@ export class RestaurantsController {
   @Body() dto: UpdateRestaurantDto,
   @CurrentUser() user: any,
   ) {
-  return this.restaurantsService.update(+id, dto, user.id);
-}
+    return this.restaurantsService.update(+id, dto, user.id);
+  }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.VENDOR)
-  @Delete(':id')
-  remove(
-    @Param('id') id: string,
-    @CurrentUser() user: any,
-  ) {
-  return this.restaurantsService.remove(+id, user.id);
-}
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.VENDOR)
+    @Delete(':id')
+    remove(
+      @Param('id') id: string,
+      @CurrentUser() user: any,
+    ) {
+    return this.restaurantsService.remove(+id, user.id);
+  }
 }

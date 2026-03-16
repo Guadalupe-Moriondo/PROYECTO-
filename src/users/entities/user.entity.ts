@@ -14,7 +14,6 @@ export class User {
   @Column()
   name: string;
 
-
   @Column({ unique: true })
   email: string;
 
@@ -30,7 +29,6 @@ export class User {
 
   @Column({ default: false })
   isAvailable: boolean;
-
 
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
@@ -49,6 +47,4 @@ export class User {
     name: 'user_favorite_restaurants',
   })
   favoriteRestaurants: Restaurant[];
-
-
 }

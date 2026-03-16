@@ -24,11 +24,59 @@ export class OrdersController {
     return this.ordersService.create(dto, user.id);
   }
 
+  @Post(':id/items')
+  addItem(
+  @Param('id') orderId: string,
+  @Body() dto: AddOrderItemDto,
+  @CurrentUser() user: any,
+  ) {
+    return this.ordersService.addItem(+orderId, dto, user.id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.USER)
+  @Post(':id/pay')
+  payOrder(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.ordersService.payOrder(id, user.id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.USER)
+  @Post(':id/confirm')
+  confirm(
+   @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.ordersService.confirmOrder(id,user.id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.DRIVER)
+  @Post(':id/accept')
+  acceptOrder(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.ordersService.assignDriver(+id, user.id);
+  }
+
   @Get()
   findAll(@CurrentUser() user: any) {
     return this.ordersService.findAllByRole(user);
   }
 
+  @Get(':id')
+  findOne(@Param('id',ParseIntPipe) id: string) {
+    return this.ordersService.findOneFormatted(+id);
+  }
+
+  @Get(':id/status-history')
+  getStatusHistory(@Param('id') id: string) {
+    return this.ordersService.getStatusHistory(+id);
+  }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.DRIVER)
@@ -37,45 +85,11 @@ export class OrdersController {
     return this.ordersService.findAvailableForDrivers();
   }
 
-
-  @Get(':id/status-history')
-  getStatusHistory(@Param('id') id: string) {
-    return this.ordersService.getStatusHistory(+id);
-  }
-
-    @UseGuards(RolesGuard)
-@Roles(UserRole.USER)
-@Post(':id/pay')
-payOrder(
-  @Param('id', ParseIntPipe) id: number,
-  @CurrentUser() user: any,
-) {
-  return this.ordersService.payOrder(id, user.id);
-}
-
-@UseGuards(RolesGuard)
-@Roles(UserRole.USER)
-@Post(':id/confirm')
-confirm(
-  @Param('id', ParseIntPipe) id: number,
-  @CurrentUser() user: any,
-) {
-  return this.ordersService.confirmOrder(id,user.id);
-}
-
-
-    @Get(':id')
-  findOne(@Param('id',ParseIntPipe) id: string) {
-    return this.ordersService.findOneFormatted(+id);
-  }
-
-  
-
-  
   @Get('driver/earnings')
   getMyEarnings(@Req() req) {
     return this.ordersService.getDriverEarnings(req.user.id);
   }
+
   @UseGuards(RolesGuard)
   @Roles(UserRole.VENDOR)
   @Patch(':id/vendor-status')
@@ -87,7 +101,7 @@ confirm(
     return this.ordersService.updateVendorStatus(+id, dto, user);
   }
 
-    @UseGuards(RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.DRIVER)
   @Patch(':id/driver-status')
   updateDriverStatus(
@@ -103,37 +117,16 @@ confirm(
     return this.ordersService.remove(+id);
   }
 
-  @Post(':id/items')
-addItem(
-  @Param('id') orderId: string,
-  @Body() dto: AddOrderItemDto,
-  @CurrentUser() user: any,
-) {
-  return this.ordersService.addItem(+orderId, dto, user.id);
-}
-
-@UseGuards(RolesGuard)
-@Roles(UserRole.DRIVER)
-@Post(':id/accept')
-acceptOrder(
-  @Param('id') id: string,
-  @CurrentUser() user: any,
-) {
-  return this.ordersService.assignDriver(+id, user.id);
-}
-
   @Delete(':id/items/:itemId')
-removeItem(
-  @Param('id') orderId: string,
-  @Param('itemId') itemId: string,
-  @CurrentUser() user: any,
-) {
-  return this.ordersService.removeItem(
-    +orderId,
-    +itemId,
-    user.id,
-  );
-}
-
-
+  removeItem(
+    @Param('id') orderId: string,
+    @Param('itemId') itemId: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.ordersService.removeItem(
+      +orderId,
+      +itemId,
+      user.id,
+    );
+  }
 }

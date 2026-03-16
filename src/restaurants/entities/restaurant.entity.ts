@@ -1,20 +1,12 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToMany,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import {Entity,PrimaryGeneratedColumn,Column,OneToMany,ManyToOne,JoinColumn,} from 'typeorm';
 import { Order } from '../../orders/entities/order.entity';
 import { Product } from '../../products/entities/product.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { User } from '../../users/entities/user.entity';
 
-
-
 @Entity()
 export class Restaurant {
+
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -47,8 +39,5 @@ export class Restaurant {
 
   @ManyToOne(() => User, { nullable: false })
   @JoinColumn({ name: 'owner_id' })
-  owner: User;
-
-  
-  
+  owner: User; 
 }

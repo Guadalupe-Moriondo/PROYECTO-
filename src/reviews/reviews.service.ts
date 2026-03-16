@@ -9,7 +9,7 @@ import { OrderStatus } from '../orders/order-status.enum';
 import { ForbiddenException } from '@nestjs/common';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { Product } from '../products/entities/product.entity';
-import { PaymentStatus } from '../payments/payments-status.enum';
+
 
 @Injectable()
 export class ReviewsService {
@@ -31,7 +31,7 @@ export class ReviewsService {
       user: { id: userId },
       restaurant: { id: dto.restaurantId },
       status: OrderStatus.DELIVERED,
-      payments: { status: PaymentStatus.PAID },
+      
     },
     relations: ['payments'],
   });

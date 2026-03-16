@@ -1,12 +1,7 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  OneToMany
-} from 'typeorm';
+import {Entity,PrimaryGeneratedColumn,Column,ManyToOne,OneToMany} from 'typeorm';
 import { Restaurant } from '../../restaurants/entities/restaurant.entity';
 import { Review } from '../../reviews/entities/review.entity';
+
 @Entity()
 export class Product {
   @PrimaryGeneratedColumn()
@@ -26,7 +21,6 @@ export class Product {
 
   @Column({ type: 'float', default: 0 })
   rating: number;
-
 
   @ManyToOne(() => Restaurant, (restaurant) => restaurant.products, {
     onDelete: 'CASCADE',

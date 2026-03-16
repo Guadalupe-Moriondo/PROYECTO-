@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
-
+import {Controller,Get,Post,Body,Patch,Param,Delete,} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -32,24 +23,24 @@ export class UsersController {
 
   @Post('login')
   login(@Body() dto: LoginDto) {
-  return this.usersService.login(dto.email, dto.password);
-}
+    return this.usersService.login(dto.email, dto.password);
+  }
 
-@UseGuards(JwtAuthGuard)
-@Get('me')
-getMe(@Req() req) {
-  console.log('REQ.USER:', req.user);
-  return req.user;
-}
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  getMe(@Req() req) {
+    console.log('REQ.USER:', req.user);
+    return req.user;
+  }
 
-@UseGuards(JwtAuthGuard)
-@Patch('me')
-updateMe(
-  @CurrentUser() user: any,
-  @Body() dto: UpdateUserDto,
-) {
-  return this.usersService.updateMe(user.id, dto);
-}
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  updateMe(
+    @CurrentUser() user: any,
+    @Body() dto: UpdateUserDto,
+  ) {
+    return this.usersService.updateMe(user.id, dto);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get('favorites/restaurants')
@@ -83,7 +74,7 @@ updateMe(
     );
   }
 
-    @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Patch('drivers/me/availability')
   setAvailability(
     @CurrentUser() user: any,
@@ -94,9 +85,6 @@ updateMe(
      isAvailable,
     );
   }
-
-
-
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -111,8 +99,6 @@ updateMe(
     return this.usersService.findOne(+id);
   }
 
-
-
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
@@ -122,7 +108,6 @@ updateMe(
     return this.usersService.update(+id, dto);
   }
 
-
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Delete(':id')
@@ -130,19 +115,14 @@ updateMe(
     return this.usersService.remove(+id);
   }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
-@Patch(':id/role')
-updateRole(
-  @Param('id') id: string,
-  @Body('role') role: UserRole,
-) {
-  return this.usersService.updateRole(+id, role);
-}
-
-
-
-
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch(':id/role')
+  updateRole(
+    @Param('id') id: string,
+    @Body('role') role: UserRole,
+  ) {
+    return this.usersService.updateRole(+id, role);
+  }
 }
 

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository} from 'typeorm';
 import { ForbiddenException } from '@nestjs/common';
 import { Restaurant } from './entities/restaurant.entity';
 import { CreateRestaurantDto } from './dto/create-restaurant.dto';
@@ -33,7 +33,6 @@ export class RestaurantsService {
   return this.restaurantRepository.save(restaurant);
 }
 
-
   async findAll(filters: { search?: string; category?: string }) {
   const query = this.restaurantRepository.createQueryBuilder('r');
 
@@ -53,7 +52,6 @@ export class RestaurantsService {
 
   return query.getMany();
 }
-
 
   async findOne(id: number) {
     const restaurant = await this.restaurantRepository.findOne({

@@ -21,21 +21,18 @@ export class UsersService {
 
     @InjectRepository(Restaurant)
     private readonly restaurantRepository: Repository<Restaurant>,
-  
   ) {}
 
   async create(dto: CreateUserDto) {
-  const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const user = this.userRepo.create({
+      ...dto,
+      password: hashedPassword,
+      role: UserRole.USER,
+    });
 
-  const user = this.userRepo.create({
-    ...dto,
-    password: hashedPassword,
-    role: UserRole.USER,
-  });
-
-  return this.userRepo.save(user);
-}
-
+    return this.userRepo.save(user);
+  }
 
   findAll() {
     return this.userRepo.find();
@@ -84,149 +81,148 @@ export class UsersService {
   }
 
   async findMe(userId: number) {
-  return this.findOne(userId);
-}
-
-async updateMe(userId: number, dto: UpdateUserDto) {
-  const user = await this.findOne(userId);
-  Object.assign(user, dto);
-  return this.userRepo.save(user);
-}
-
-async login(email: string, password: string) {
-  const user = await this.userRepo.findOne({
-    where: { email },
-    select: ['id', 'email', 'password', 'role'],
-  });
-
-  if (!user || !user.password) {
-    throw new UnauthorizedException('Invalid credentials');
-  }
-  
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) {
-    throw new UnauthorizedException('Invalid credentials');
+    return this.findOne(userId);
   }
 
-  const payload = {
-    sub: user.id,
-    role: user.role,   
-  };
-
-  return {
-    access_token: this.jwtService.sign(payload),
-  };
-}
-
-
-async addFavoriteRestaurant(userId: number, restaurantId: number) {
-  const user = await this.userRepo.findOne({
-    where: { id: userId },
-    relations: ['favoriteRestaurants'],
-  });
-
-  if (!user) throw new NotFoundException('User not found');
-
-  const restaurant = await this.restaurantRepository.findOne({
-    where: { id: restaurantId },
-  });
-
-  if (!restaurant)
-    throw new NotFoundException('Restaurant not found');
-
-  const alreadyFavorite = user.favoriteRestaurants.some(
-    r => r.id === restaurantId,
-  );
-
-  if (alreadyFavorite) {
-    throw new BadRequestException('Already in favorites');
+  async updateMe(userId: number, dto: UpdateUserDto) {
+    const user = await this.findOne(userId);
+    Object.assign(user, dto);
+    return this.userRepo.save(user);
   }
 
-  user.favoriteRestaurants.push(restaurant);
-  await this.userRepo.save(user);
-
-  return { message: 'Added to favorites' };
-}
-
-async removeFavoriteRestaurant(userId: number, restaurantId: number) {
-  const user = await this.userRepo.findOne({
-    where: { id: userId },
-    relations: ['favoriteRestaurants'],
-  });
-
-  if (!user) throw new NotFoundException('User not found');
-
-  user.favoriteRestaurants = user.favoriteRestaurants.filter(
-    r => r.id !== restaurantId,
-  );
-
-  await this.userRepo.save(user);
-
-  return { message: 'Removed from favorites' };
-}
-
-async getFavoriteRestaurants(userId: number) {
-  const user = await this.userRepo.findOne({
-    where: { id: userId },
-    relations: ['favoriteRestaurants'],
-  });
-
-  if (!user) throw new NotFoundException('User not found');
-
-  return user.favoriteRestaurants;
-}
-
-async setDriverAvailability(
-  userId: number,
-  isAvailable: boolean,
-) {
-  const user = await this.userRepo.findOne({
-    where: { id: userId },
-  });
-
-  if (!user) {
-    throw new NotFoundException('User not found');
-  }
-
-  if (user.role !== UserRole.DRIVER) {
-    throw new ForbiddenException('Only drivers allowed');
-  }
-
-  user.isAvailable = isAvailable;
-  return this.userRepo.save(user);
-}
-
-async updateRole(id: number, role: UserRole) {
-  const user = await this.userRepo.findOne({
-    where: { id },
-  });
-
-  if (!user) {
-    throw new NotFoundException('User not found');
-  }
-
-  user.role = role;
-  return this.userRepo.save(user);
-}
-
-
-async createAdminIfNotExists() {
-  const adminExists = await this.userRepo.findOne({
-    where: { role: UserRole.ADMIN },
-  });
-
-  if (!adminExists) {
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-
-    const admin = this.userRepo.create({
-      name: 'Admin',
-      email: 'admin@admin.com',
-      password: hashedPassword,
-      role: UserRole.ADMIN,
+  async login(email: string, password: string) {
+    const user = await this.userRepo.findOne({
+      where: { email },
+      select: ['id', 'email', 'password', 'role'],
     });
 
-    await this.userRepo.save(admin);
-    console.log('✅ Admin creado automáticamente');
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = {
+      sub: user.id,
+      role: user.role,   
+    };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
-}
+
+  async addFavoriteRestaurant(userId: number, restaurantId: number) {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      relations: ['favoriteRestaurants'],
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    const restaurant = await this.restaurantRepository.findOne({
+      where: { id: restaurantId },
+    });
+
+    if (!restaurant)
+      throw new NotFoundException('Restaurant not found');
+
+    const alreadyFavorite = user.favoriteRestaurants.some(
+      r => r.id === restaurantId,
+    );
+
+    if (alreadyFavorite) {
+      throw new BadRequestException('Already in favorites');
+    }
+
+    user.favoriteRestaurants.push(restaurant);
+    await this.userRepo.save(user);
+
+    return { message: 'Added to favorites' };
+  }
+
+  async removeFavoriteRestaurant(userId: number, restaurantId: number) {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      relations: ['favoriteRestaurants'],
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    user.favoriteRestaurants = user.favoriteRestaurants.filter(
+      r => r.id !== restaurantId,
+    );
+
+    await this.userRepo.save(user);
+
+    return { message: 'Removed from favorites' };
+  }
+
+  async getFavoriteRestaurants(userId: number) {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      relations: ['favoriteRestaurants'],
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    return user.favoriteRestaurants;
+  }
+
+  async setDriverAvailability(
+    userId: number,
+    isAvailable: boolean,
+    ) {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.role !== UserRole.DRIVER) {
+      throw new ForbiddenException('Only drivers allowed');
+    }
+
+    user.isAvailable = isAvailable;
+    return this.userRepo.save(user);
+  }
+
+  async updateRole(id: number, role: UserRole) {
+    const user = await this.userRepo.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.role = role;
+    return this.userRepo.save(user);
+  }
+
+
+  async createAdminIfNotExists() {
+    const adminExists = await this.userRepo.findOne({
+      where: { role: UserRole.ADMIN },
+    });
+
+    if (!adminExists) {
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+
+      const admin = this.userRepo.create({
+        name: 'Admin',
+        email: 'admin@admin.com',
+        password: hashedPassword,
+        role: UserRole.ADMIN,
+      });
+
+      await this.userRepo.save(admin);
+      console.log('Admin creado automáticamente');
+    }
+  }
 }
