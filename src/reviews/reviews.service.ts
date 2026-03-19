@@ -25,7 +25,6 @@ export class ReviewsService {
   ) {}
 
   async create(dto: CreateReviewDto, userId: number) {
-
   const hasOrder = await this.orderRepository.findOne({
     where: {
       user: { id: userId },
@@ -52,8 +51,6 @@ export class ReviewsService {
 if (existing) {
   throw new ForbiddenException('Order already reviewed');
 }
-
-
   const review = this.reviewRepository.create({
     rating: dto.rating,
     comment: dto.comment,
@@ -62,16 +59,9 @@ if (existing) {
     product: dto.productId ? { id: dto.productId } : undefined,
     order: { id: dto.orderId },
   });
-
-  
-
     const saved = await this.reviewRepository.save(review);
-
-
-
     // ⭐ recalcular restaurant
    await this.recalcRestaurantRating(dto.restaurantId);
-
    // ⭐ recalcular producto (si hay)
     if (dto.productId) {
     await this.recalcProductRating(dto.productId);
@@ -79,8 +69,6 @@ if (existing) {
 
   return saved;
 }
-
-
 
   async findAll() {
     return this.reviewRepository.find({ relations: ['user', 'restaurant', 'product'] });

@@ -224,9 +224,7 @@ export class OrdersService {
     if (order.status !== OrderStatus.CART) {
     throw new BadRequestException('Only CART can be modified');
     }
-
-
-    
+  
     const product = await this.productRepo.findOne({
       where: {
         id: dto.productId,
